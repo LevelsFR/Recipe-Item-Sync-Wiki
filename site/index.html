@@ -1,0 +1,381 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Recipe Item Sync v3 documentation for NeoForge datapack item synchronization and JEI, REI, EMI integration.">
+  <title>Recipe Item Sync v3 Wiki</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="#top">
+      <span class="brand-mark">RIS</span>
+      <span>
+        <strong>Recipe Item Sync</strong>
+        <small>v3 Documentation</small>
+      </span>
+    </a>
+    <nav class="toplinks">
+      <a href="https://github.com/LevelsFR/Recipe-Item-Sync">GitHub</a>
+      <a href="https://discord.gg/kb8NSTF45n">Discord</a>
+    </nav>
+  </header>
+
+  <div class="layout" id="top">
+    <aside class="sidebar">
+      <nav>
+        <a href="#overview">Overview</a>
+        <a href="#compatibility">Compatibility</a>
+        <a href="#installation">Installation</a>
+        <a href="#how-it-works">How it works</a>
+        <a href="#configuration">Configuration</a>
+        <a href="#manual-items">Manual virtual items</a>
+        <a href="#commands">Commands</a>
+        <a href="#viewer-support">Viewer support</a>
+        <a href="#datapack-authors">For datapack authors</a>
+        <a href="#troubleshooting">Troubleshooting</a>
+        <a href="#limitations">Known limitations</a>
+        <a href="#faq">FAQ</a>
+      </nav>
+    </aside>
+
+    <main class="content">
+      <section class="hero">
+        <div class="eyebrow">Recipe Item Sync v3</div>
+        <h1>Make server-side datapack items visible in recipe viewers.</h1>
+        <p class="lead">
+          Recipe Item Sync discovers supported virtual ItemStacks and recipe data on the server,
+          then synchronizes them to NeoForge clients so players can find them in JEI, REI, or EMI
+          before crafting or receiving the item.
+        </p>
+        <div class="actions">
+          <a class="button primary" href="#installation">Get started</a>
+          <a class="button" href="https://github.com/LevelsFR/Recipe-Item-Sync">View source</a>
+        </div>
+        <div class="notice">
+          <strong>The datapack can stay server-side.</strong>
+          Clients need Recipe Item Sync and at least one supported recipe viewer. Custom textures,
+          models, and translations still require the datapack author's resource pack on the client.
+        </div>
+      </section>
+
+      <section id="overview">
+        <h2>Overview</h2>
+        <p>
+          Datapacks often create custom items by using vanilla ItemStacks with components,
+          CustomModelData, custom names, lore, loot tables, commands, or custom crafting systems.
+          Those items may work perfectly in-game while remaining invisible to normal recipe viewers.
+        </p>
+        <p>Recipe Item Sync v3 bridges that gap. It can synchronize:</p>
+        <ul>
+          <li>ItemStack outputs accepted by Minecraft's RecipeManager.</li>
+          <li>Names, lore, CustomModelData, custom data, data components, and stack counts.</li>
+          <li>Supported fallback crafting displays for datapack crafting JSON.</li>
+          <li>Deterministic virtual item definitions from supported item loot tables.</li>
+          <li>Supported static datapack item-entity crafting systems with deterministic outputs.</li>
+        </ul>
+      </section>
+
+      <section id="compatibility">
+        <h2>Compatibility</h2>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr><th>Minecraft</th><th>NeoForge</th><th>JEI</th><th>REI</th><th>EMI</th></tr>
+            </thead>
+            <tbody>
+              <tr><td>1.21.1</td><td>21.1.238+</td><td>Supported</td><td>Supported</td><td>Supported</td></tr>
+              <tr><td>26.2</td><td>26.2.0.88+</td><td>Supported</td><td>Supported</td><td>Not currently available</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p class="muted">
+          EMI remains a recognized configuration preference on 26.2 for compatibility, but it cannot
+          be selected until a compatible EMI build exists.
+        </p>
+      </section>
+
+      <section id="installation">
+        <h2>Installation</h2>
+        <ol class="steps">
+          <li>
+            <strong>Server</strong>
+            <span>Install the matching Recipe Item Sync v3 JAR in the server's <code>mods</code> folder.</span>
+          </li>
+          <li>
+            <strong>Client</strong>
+            <span>Install the same Recipe Item Sync target and at least one supported viewer: JEI, REI, or EMI where available.</span>
+          </li>
+          <li>
+            <strong>Datapack</strong>
+            <span>Keep the datapack on the server as usual. No client-side copy is required for synchronization.</span>
+          </li>
+          <li>
+            <strong>Resource pack</strong>
+            <span>If the custom items use custom textures, models, or translations, make sure the matching resource pack is available to clients.</span>
+          </li>
+          <li>
+            <strong>Join the server</strong>
+            <span>Recipe Item Sync builds a server snapshot and sends supported virtual content to the client.</span>
+          </li>
+        </ol>
+      </section>
+
+      <section id="how-it-works">
+        <h2>How it works</h2>
+        <div class="grid">
+          <article class="card">
+            <span class="card-number">1</span>
+            <h3>Collect</h3>
+            <p>The server inspects supported recipes, virtual ItemStacks, deterministic item loot tables, and supported custom crafting data.</p>
+          </article>
+          <article class="card">
+            <span class="card-number">2</span>
+            <h3>Snapshot</h3>
+            <p>The discovered content is normalized into a deterministic snapshot with stable virtual identifiers.</p>
+          </article>
+          <article class="card">
+            <span class="card-number">3</span>
+            <h3>Sync</h3>
+            <p>The server sends the snapshot to connected clients running Recipe Item Sync.</p>
+          </article>
+          <article class="card">
+            <span class="card-number">4</span>
+            <h3>Display</h3>
+            <p>The client applies the supported content through the installed recipe viewer's public integration APIs.</p>
+          </article>
+        </div>
+        <p>
+          Automatically discovered items use stable <code>ris:</code> virtual IDs derived from their source.
+          Manually configured entries keep the virtual ID written in the configuration.
+        </p>
+      </section>
+
+      <section id="configuration">
+        <h2>Configuration</h2>
+        <p>
+          The current v3 configuration file is:
+          <code>config/recipeitemsync/recipeitemsync.json</code>
+        </p>
+        <p>
+          If the new file does not exist and an older
+          <code>config/recipeitemsync/server/recipeitemsync.json</code> is present, v3 migrates the legacy file automatically.
+        </p>
+        <pre><code>{
+  "viewerPreference": "auto",
+  "namespaces": [],
+  "manualVirtualItems": []
+}</code></pre>
+
+        <h3><code>viewerPreference</code></h3>
+        <p>Controls which installed recipe viewer receives Recipe Item Sync content.</p>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Value</th><th>Behavior</th></tr></thead>
+            <tbody>
+              <tr><td><code>auto</code></td><td>Automatically synchronizes supported installed viewers.</td></tr>
+              <tr><td><code>all</code></td><td>Allows all supported installed viewers.</td></tr>
+              <tr><td><code>jei</code></td><td>Limits Recipe Item Sync integration to JEI.</td></tr>
+              <tr><td><code>rei</code></td><td>Limits Recipe Item Sync integration to REI.</td></tr>
+              <tr><td><code>emi</code></td><td>Limits integration to EMI where EMI is supported for that Minecraft target.</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p class="muted">Invalid or blank values fall back to <code>auto</code>.</p>
+
+        <h3><code>namespaces</code></h3>
+        <p>
+          Optional allow-list for virtual content namespaces. An empty list allows all eligible namespaces.
+          This is useful when a modpack only wants Recipe Item Sync to expose content from selected datapacks.
+        </p>
+        <pre><code>{
+  "viewerPreference": "auto",
+  "namespaces": [
+    "stellarity",
+    "my_datapack"
+  ],
+  "manualVirtualItems": []
+}</code></pre>
+        <p>
+          Entries ending with <code>:*</code> are also accepted, for example <code>stellarity:*</code>.
+        </p>
+      </section>
+
+      <section id="manual-items">
+        <h2>Manual virtual items</h2>
+        <p>
+          Automatic discovery should be preferred. Manual entries exist as a fallback for items that cannot
+          be discovered safely from normal recipe or deterministic datapack data.
+        </p>
+        <pre><code>{
+  "viewerPreference": "auto",
+  "namespaces": [],
+  "manualVirtualItems": [
+    {
+      "virtualId": "my_pack:ancient_relic",
+      "hostItem": "minecraft:paper",
+      "customModelData": 1001,
+      "displayName": "Ancient Relic",
+      "tooltip": [
+        "A manually exposed datapack item"
+      ]
+    }
+  ]
+}</code></pre>
+
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Field</th><th>Purpose</th></tr></thead>
+            <tbody>
+              <tr><td><code>virtualId</code></td><td>Unique identifier used by Recipe Item Sync.</td></tr>
+              <tr><td><code>hostItem</code></td><td>The vanilla or modded base item used to build the displayed ItemStack.</td></tr>
+              <tr><td><code>customModelData</code></td><td>Optional positive CustomModelData value.</td></tr>
+              <tr><td><code>displayName</code></td><td>Optional display name hint.</td></tr>
+              <tr><td><code>tooltip</code></td><td>Optional list of tooltip lines.</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section id="commands">
+        <h2>Commands</h2>
+        <p>
+          Recipe Item Sync's administration commands require Minecraft permission level 2.
+        </p>
+        <div class="command-list">
+          <div><code>/recipeitemsync status</code><span>Shows the current synchronization state and snapshot diagnostics.</span></div>
+          <div><code>/recipeitemsync clientstatus</code><span>Shows Recipe Item Sync synchronization diagnostics.</span></div>
+          <div><code>/recipeitemsync resync &lt;player&gt;</code><span>Rebuilds the snapshot and schedules a fresh sync for the selected player or players.</span></div>
+          <div><code>/recipeitemsync resync all</code><span>Rebuilds the snapshot and schedules a fresh sync for everyone online.</span></div>
+          <div><code>/recipeitemsync dump</code><span>Writes a diagnostic snapshot report under <code>recipeitemsync-dumps</code>.</span></div>
+          <div><code>/recipeitemsync give &lt;virtualId&gt;</code><span>Gives the resolved virtual ItemStack to the command player. Virtual IDs are suggested by the command.</span></div>
+        </div>
+      </section>
+
+      <section id="viewer-support">
+        <h2>Recipe viewer support</h2>
+        <div class="grid viewer-grid">
+          <article class="card">
+            <h3>JEI</h3>
+            <p>Receives runtime virtual item entries and supported dedicated datapack recipe displays.</p>
+          </article>
+          <article class="card">
+            <h3>REI</h3>
+            <p>Receives discovered virtual item entries. Dedicated custom datapack crafting categories may be more limited than JEI.</p>
+          </article>
+          <article class="card">
+            <h3>EMI</h3>
+            <p>Supported on Minecraft 1.21.1. Recipe application follows EMI's reload lifecycle rather than mutating frozen EMI internals.</p>
+          </article>
+        </div>
+      </section>
+
+      <section id="datapack-authors">
+        <h2>For datapack authors</h2>
+        <p>
+          Recipe Item Sync works best when a custom item has a deterministic ItemStack that can be derived
+          from recipe or loot-table data. You normally do not need to maintain a separate client-side list.
+        </p>
+        <h3>Best results</h3>
+        <ul>
+          <li>Use stable recipe and loot-table identifiers.</li>
+          <li>Keep output ItemStacks deterministic when possible.</li>
+          <li>Use normal data components for names, lore, CustomModelData, and custom data.</li>
+          <li>Provide a resource pack separately when custom visual assets or translations are required.</li>
+        </ul>
+        <h3>Custom systems</h3>
+        <p>
+          Static item-entity crafting systems can be exposed when their required inputs and deterministic
+          outputs can be represented safely. Arbitrary mcfunction logic cannot always be converted into a
+          recipe viewer display.
+        </p>
+      </section>
+
+      <section id="troubleshooting">
+        <h2>Troubleshooting</h2>
+        <h3>The item does not appear</h3>
+        <ol>
+          <li>Confirm that the server and client use the matching Recipe Item Sync target.</li>
+          <li>Confirm that the client has a supported recipe viewer installed.</li>
+          <li>Run <code>/recipeitemsync status</code> and check whether the expected virtual content is present.</li>
+          <li>Run <code>/recipeitemsync dump</code> and inspect the generated diagnostic report.</li>
+          <li>Check whether <code>namespaces</code> is filtering out the datapack namespace.</li>
+          <li>Run <code>/recipeitemsync resync all</code> after changing datapack content or configuration.</li>
+          <li>Check server and client logs for Recipe Item Sync or viewer integration messages.</li>
+        </ol>
+
+        <h3>The item appears but has the wrong texture</h3>
+        <p>
+          Recipe Item Sync synchronizes ItemStacks and recipe metadata, not resource-pack assets.
+          The client still needs the resource pack that contains the custom texture or model.
+        </p>
+
+        <h3>The datapack uses commands or functions</h3>
+        <p>
+          Command-driven systems are supported only when Recipe Item Sync can determine a stable input and
+          output representation. If the result depends on dynamic mcfunction logic, random state, scoreboards,
+          or other runtime conditions, a safe recipe display may not be possible.
+        </p>
+
+        <h3>After <code>/reload</code></h3>
+        <p>
+          Recipe Item Sync is designed to rebuild and resynchronize supported datapack content without leaving
+          old duplicate virtual entries. If a viewer does not refresh as expected, use
+          <code>/recipeitemsync resync all</code> and inspect the dump and logs.
+        </p>
+      </section>
+
+      <section id="limitations">
+        <h2>Known limitations</h2>
+        <ul>
+          <li>Recipe Item Sync does not register datapack items as normal registry items.</li>
+          <li>It does not distribute textures, models, fonts, translations, or other resource-pack files.</li>
+          <li>Highly custom modded recipe types can expose an output while still being impossible to display as a normal recipe.</li>
+          <li>Arbitrary mcfunction systems are only shown when their inputs and outputs can be represented safely and deterministically.</li>
+          <li>Dedicated custom recipe categories are not identical across JEI, REI, and EMI.</li>
+        </ul>
+      </section>
+
+      <section id="faq">
+        <h2>FAQ</h2>
+        <details>
+          <summary>Does the datapack need to be installed on every client?</summary>
+          <p>No. The datapack can remain server-side. Clients need Recipe Item Sync and a supported recipe viewer.</p>
+        </details>
+        <details>
+          <summary>Do clients still need the resource pack?</summary>
+          <p>Yes, if the datapack relies on custom textures, models, fonts, or translations.</p>
+        </details>
+        <details>
+          <summary>Does Recipe Item Sync create real registered items?</summary>
+          <p>No. It synchronizes virtual ItemStacks and recipe metadata for supported recipe viewers.</p>
+        </details>
+        <details>
+          <summary>Can it show altar or item-entity recipes?</summary>
+          <p>Yes, when Recipe Item Sync can statically determine the required item inputs and deterministic output.</p>
+        </details>
+        <details>
+          <summary>What should I send with a bug report?</summary>
+          <p>Include the Minecraft version, NeoForge version, Recipe Item Sync version, recipe viewer and version, server/client logs, and ideally the output from <code>/recipeitemsync dump</code>.</p>
+        </details>
+      </section>
+
+      <section class="support">
+        <h2>Support and links</h2>
+        <div class="actions">
+          <a class="button primary" href="https://github.com/LevelsFR/Recipe-Item-Sync">GitHub Repository</a>
+          <a class="button" href="https://discord.gg/kb8NSTF45n">Discord</a>
+          <a class="button" href="https://www.curseforge.com/members/levelsfr/projects">CurseForge Projects</a>
+          <a class="button" href="https://www.patreon.com/c/OurStoryCollection">Patreon</a>
+          <a class="button" href="https://bisecthosting.com/OurStory">BisectHosting</a>
+        </div>
+      </section>
+
+      <footer>
+        <p>Recipe Item Sync by LevelsFR. Documentation for v3.</p>
+      </footer>
+    </main>
+  </div>
+</body>
+</html>
