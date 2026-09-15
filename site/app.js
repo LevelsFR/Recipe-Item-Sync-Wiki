@@ -138,3 +138,57 @@
   const initial = location.hash.replace("#", "");
   showTab(validTabs.has(initial) ? initial : "overview", false);
 })();
+
+(() => {
+  async function getJson(url, timeout = 6500) {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), timeout);
+    try {
+      const response = await fetch(url, { cache: "no-store", signal: controller.signal });
+      if (!response.ok) throw new Error("HTTP " + response.status);
+      return await response.json();
+    } finally {
+      clearTimeout(timer);
+    }
+  }
+
+  function compact(value) {
+    const number = Number(value);
+    if (!Number.isFinite(number)) return String(value ?? "");
+    return new Intl.NumberFormat("en", { notation: "compact", maximumFractionDigits: 1 }).format(number);
+  }
+
+  async function loadDiscord() {
+    const target = document.getElementById("discordStats");
+    const badge = document.getElementById("discordBadge");
+    if (!target || !badge) return;
+    try {
+      const data = await getJson("https://discord.com/api/v10/invites/kb8NSTF45n?with_counts=true&with_expiration=true");
+      const online = data.approximate_presence_count;
+      const members = data.approximate_member_count;
+      if (!Number.isFinite(online) || !Number.isFinite(members)) return;
+      target.innerHTML = '<span class="status-dot"></span>' + compact(online) + ' online <span class="community-divider">•</span> ' + compact(members) + ' members';
+      badge.title = compact(online) + " online • " + compact(members) + " members";
+    } catch {
+      target.innerHTML = '<span class="status-dot"></span>Join the server';
+    }
+  }
+
+  async function loadShield(url, targetId, suffix) {
+    const target = document.getElementById(targetId);
+    if (!target) return;
+    try {
+      const data = await getJson(url);
+      const value = String(data.message || "").trim();
+      if (value) target.textContent = value + " " + suffix;
+    } catch {}
+  }
+
+  loadDiscord();
+  loadShield("https://img.shields.io/curseforge/dt/1410772.json", "curseforgeStats", "downloads");
+  loadShield("https://img.shields.io/modrinth/dt/recipe-item-sync.json", "modrinthStats", "downloads");
+
+  setInterval(loadDiscord, 300000);
+  setInterval(() => loadShield("https://img.shields.io/curseforge/dt/1410772.json", "curseforgeStats", "downloads"), 600000);
+  setInterval(() => loadShield("https://img.shields.io/modrinth/dt/recipe-item-sync.json", "modrinthStats", "downloads"), 600000);
+})();
